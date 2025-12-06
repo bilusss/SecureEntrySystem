@@ -4,8 +4,8 @@ sqlmodel
 python-multipart
 pydantic[email]
 pydantic-factories
+polyfactory
 httpx
-
 pytest
 pytest-env
 coverage
