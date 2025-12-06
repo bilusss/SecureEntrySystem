@@ -24,7 +24,15 @@ Windows
 ```
 pip install -r requirements
 ```
+
+### Run tests
+```
+pytest tests 
+```
+or
+
 ### Run app
 ```
 python -m app.main
 ```
+

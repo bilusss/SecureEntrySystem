@@ -3,3 +3,9 @@ uvicorn
 sqlmodel
 python-multipart
 pydantic[email]
+pydantic-factories
+httpx
+
+pytest
+pytest-env
+coverage

@@ -3,8 +3,9 @@ from typing import Annotated
 from app.models import Employee
 from sqlmodel import SQLModel, create_engine, Session
 from fastapi import Depends
+from app import settings
 
-engine = create_engine("sqlite:///api.db")
+engine = create_engine(settings.DATABASE_URL)
 
 def init_db():
     SQLModel.metadata.create_all(engine)

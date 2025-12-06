@@ -1,16 +1,28 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from app import settings
 import uvicorn
 from app.api.employees import employees_router
 from app.db import init_db
 
-app = FastAPI(title="SecureEntryBackend", docs_url="/api/docs", openapi_url="/api")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    init_db()
+    yield
+
+
+app = FastAPI(
+    title="SecureEntryBackend",
+    docs_url="/api/docs",
+    openapi_url="/api",
+    lifespan=lifespan,
+)
 
 
 app.include_router(router=employees_router, prefix="/api", tags=["employees"])
 
-@app.on_event("startup")
-def init():
-    init_db()
 
 @app.get("/health", status_code=200)
 def health_check():

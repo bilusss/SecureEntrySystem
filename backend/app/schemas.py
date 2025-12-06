@@ -11,7 +11,7 @@ class EmployeeBase(BaseModel):
 
 
 class EmployeeUpdate(BaseModel):
-    email: str | None = None
+    email: EmailStr | None = None
     first_name: str | None = None
     last_name: str | None = None
     photo_path: str | None = None
