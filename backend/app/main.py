@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from app import settings
 import uvicorn
 from app.api.employees import employees_router
+from app.api.entries import entries_router
 from app.db import init_db
 
 
@@ -22,6 +23,7 @@ app = FastAPI(
 
 
 app.include_router(router=employees_router, prefix="/api", tags=["employees"])
+app.include_router(router=entries_router, prefix="/api", tags=["entries"])
 
 
 @app.get("/health", status_code=200)

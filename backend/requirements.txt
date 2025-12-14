@@ -10,3 +10,6 @@ pytest
 pytest-env
 coverage
 Pillow
+fastapi-mail
+qrcode[pil]
+python-dotenv
