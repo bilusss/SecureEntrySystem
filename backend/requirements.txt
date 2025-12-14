@@ -14,3 +14,4 @@ fastapi-mail
 qrcode[pil]
 python-dotenv
 fastapi_users
+fastapi-users-db-sqlalchemy
