@@ -15,12 +15,15 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 DATABASE_URL = "sqlite:///api.db"
 TEST_DATABASE_URL = "sqlite:///memory:test.db"
 
-mail_config = ConnectionConfig(
-    MAIL_USERNAME=os.getenv("EMAIL_HOST_USER", ""),
-    MAIL_PASSWORD=os.getenv("EMAIL_HOST_PASSWORD", ""),
-    MAIL_FROM=os.getenv("EMAIL_HOST_USER", ""),
-    MAIL_PORT=os.getenv("EMAIL_PORT", 578),
-    MAIL_SERVER=os.getenv("EMAIL_HOST", "smtp.mailtrap.io"),
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
-)
+TESTING = os.getenv("TESTING", "false") == "true"
+
+if not TESTING:
+    mail_config = ConnectionConfig(
+        MAIL_USERNAME=os.getenv("EMAIL_HOST_USER", ""),
+        MAIL_PASSWORD=os.getenv("EMAIL_HOST_PASSWORD", ""),
+        MAIL_FROM=os.getenv("EMAIL_HOST_USER", ""),
+        MAIL_PORT=os.getenv("EMAIL_PORT", 578),
+        MAIL_SERVER=os.getenv("EMAIL_HOST", "smtp.mailtrap.io"),
+        MAIL_STARTTLS=True,
+        MAIL_SSL_TLS=False,
+    )
