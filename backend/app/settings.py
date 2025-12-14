@@ -27,3 +27,13 @@ if not TESTING:
         MAIL_STARTTLS=True,
         MAIL_SSL_TLS=False,
     )
+else:
+    mail_config = ConnectionConfig(
+        MAIL_USERNAME="test_user",
+        MAIL_PASSWORD="test_password",
+        MAIL_FROM="test@test.com",
+        MAIL_PORT=1025,
+        MAIL_SERVER="localhost",
+        MAIL_STARTTLS=False,
+        MAIL_SSL_TLS=False,
+    )
