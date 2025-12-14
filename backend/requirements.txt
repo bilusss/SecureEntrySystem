@@ -13,5 +13,7 @@ Pillow
 fastapi-mail
 qrcode[pil]
 python-dotenv
+
 fastapi_users
 fastapi-users-db-sqlalchemy
+fastapi-users-db-sync-sqlalchemy
