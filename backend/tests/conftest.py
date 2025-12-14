@@ -3,6 +3,8 @@ import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 from app.db import get_db
+from app.models import User
+from app.users import current_user
 
 
 @pytest.fixture(name="session")
@@ -30,3 +32,18 @@ def client(session):
         yield c
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def override_auth():
+    user = User(
+        id="00000000-0000-0000-0000-000000000001",
+        email="test@example.com",
+        hashed_password="fakehashed",
+        is_active=True,
+        is_superuser=True,
+    )
+
+    app.dependency_overrides[current_user] = lambda: user
+    yield
+    app.dependency_overrides.pop(current_user, None)

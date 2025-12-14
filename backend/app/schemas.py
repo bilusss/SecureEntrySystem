@@ -1,7 +1,9 @@
-from pydantic import BaseModel, EmailStr, ValidationError
+from pydantic import BaseModel, EmailStr, ValidationError, Field
 from datetime import date
 from fastapi import Form
 from fastapi.exceptions import RequestValidationError
+from fastapi_users.schemas import BaseUserCreate, BaseUser
+import uuid 
 
 
 class EmployeeBase(BaseModel):
@@ -30,6 +32,7 @@ class EmployeeUpdate(BaseModel):
             raise RequestValidationError(e.errors()) from e
 
 
+
 class EmployeeCreate(BaseModel):
     email: EmailStr
     first_name: str
@@ -46,8 +49,21 @@ class EmployeeCreate(BaseModel):
             return cls(email=email, first_name=first_name, last_name=last_name)
         except ValidationError as e:
             raise RequestValidationError(e.errors()) from e
-        
+
+
 class QRCodeBase(BaseModel):
     employee_id: int
     token_hash: str
     expires_at: date
+
+class UserLogin(BaseModel):
+    username: EmailStr = Field(..., alias="email")
+    password: str
+
+class UserRead(BaseUser):
+    pass
+
+
+class UserCreate(BaseUserCreate):
+    email: EmailStr
+    password: str

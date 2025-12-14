@@ -85,7 +85,9 @@ def update_employee(*, session: Session, employee_id: int, employee_in: Employee
     """
     employee: Employee = get_employee(session=session, employee_id=employee_id)
 
-    update_data: dict[str, Any] = employee_in.model_dump(exclude_unset=True)
+    update_data: dict[str, Any] = employee_in.model_dump(
+        exclude_unset=True, exclude_none=True
+    )
     employee.sqlmodel_update(update_data)
     session.commit()
     session.refresh(employee)
