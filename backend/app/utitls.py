@@ -8,6 +8,9 @@ from fastapi import UploadFile
 from fastapi_mail import FastMail, MessageSchema
 from app import settings
 from app.settings import mail_config
+import cv2
+import face_recognition
+import tempfile
 
 
 def _get_upload_path(file_name: str) -> str:
@@ -55,8 +58,47 @@ def verify_token(token: str, stored_hash: str) -> bool:
     return hmac.compare_digest(token_hash, stored_hash)
 
 def verify_face(uploaded_photo: UploadFile, stored_photo_path: str) -> bool:
-    # Placeholder for face verification logic
-    # In a real implementation, this would involve using a face recognition library
-    # to compare the uploaded photo with the stored photo.
-    # Here, we simply return True for demonstration purposes.
-    return True
+    """
+    Weryfikuje twarz używając lokalnej kamerki (laptop / USB)
+    Działa TYLKO gdy serwer i klient są na tym samym hoście
+    """
+
+    # 1️⃣ Zrób zdjęcie z kamerki
+    cap = cv2.VideoCapture(0)  # 0 = kamerka laptopa, 1 = USB
+
+    if not cap.isOpened():
+        raise RuntimeError("Nie można otworzyć kamerki")
+
+    ret, frame = cap.read()
+    cap.release()
+
+    if not ret:
+        return False
+
+    # 2️⃣ Zapisz zdjęcie tymczasowo
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+        camera_photo_path = tmp.name
+        cv2.imwrite(camera_photo_path, frame)
+
+    try:
+        # 3️⃣ Wczytaj obrazy
+        known_image = face_recognition.load_image_file(stored_photo_path)
+        unknown_image = face_recognition.load_image_file(camera_photo_path)
+
+        known_encodings = face_recognition.face_encodings(known_image)
+        unknown_encodings = face_recognition.face_encodings(unknown_image)
+
+        if not known_encodings or not unknown_encodings:
+            return False
+
+        # 4️⃣ Porównanie twarzy
+        result = face_recognition.compare_faces(
+            [known_encodings[0]],
+            unknown_encodings[0],
+            tolerance=0.5
+        )
+
+        return result[0]
+
+    finally:
+        os.remove(camera_photo_path)
