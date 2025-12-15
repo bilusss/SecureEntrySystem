@@ -57,48 +57,53 @@ def verify_token(token: str, stored_hash: str) -> bool:
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     return hmac.compare_digest(token_hash, stored_hash)
 
-def verify_face(uploaded_photo: UploadFile, stored_photo_path: str) -> bool:
-    """
-    Weryfikuje twarz używając lokalnej kamerki (laptop / USB)
-    Działa TYLKO gdy serwer i klient są na tym samym hoście
-    """
+def verify_face(stored_photo_path: str, tolerance: float = 0.5) -> bool:
 
-    # 1️⃣ Zrób zdjęcie z kamerki
-    cap = cv2.VideoCapture(0)  # 0 = kamerka laptopa, 1 = USB
+    # Wczytaj obraz referencyjny
+    known_image = face_recognition.load_image_file(stored_photo_path)
+    known_encodings = face_recognition.face_encodings(known_image)
+    if not known_encodings:
+        print("Nie znaleziono twarzy na zdjęciu referencyjnym")
+        return False
+    known_encoding = known_encodings[0]
 
+    cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         raise RuntimeError("Nie można otworzyć kamerki")
 
-    ret, frame = cap.read()
-    cap.release()
-
-    if not ret:
-        return False
-
-    # 2️⃣ Zapisz zdjęcie tymczasowo
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
-        camera_photo_path = tmp.name
-        cv2.imwrite(camera_photo_path, frame)
+    print("Naciśnij 'q', aby zakończyć podgląd")
+    match_found = False
 
     try:
-        # 3️⃣ Wczytaj obrazy
-        known_image = face_recognition.load_image_file(stored_photo_path)
-        unknown_image = face_recognition.load_image_file(camera_photo_path)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("Błąd odczytu z kamery")
+                break
 
-        known_encodings = face_recognition.face_encodings(known_image)
-        unknown_encodings = face_recognition.face_encodings(unknown_image)
+            rgb_frame = frame[:, :, ::-1]  # BGR -> RGB
+            face_locations = face_recognition.face_locations(rgb_frame)
+            face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
-        if not known_encodings or not unknown_encodings:
-            return False
+            for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
+                matches = face_recognition.compare_faces([known_encoding], face_encoding, tolerance=tolerance)
+                if matches[0]:
+                    color = (0, 255, 0)
+                    label = "MATCH"
+                    match_found = True
+                else:
+                    color = (0, 0, 255)
+                    label = "NO MATCH"
 
-        # 4️⃣ Porównanie twarzy
-        result = face_recognition.compare_faces(
-            [known_encodings[0]],
-            unknown_encodings[0],
-            tolerance=0.5
-        )
+                cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
+                cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
 
-        return result[0]
+            cv2.imshow('Live Face Verification', frame)
 
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
     finally:
-        os.remove(camera_photo_path)
+        cap.release()
+        cv2.destroyAllWindows()
+
+    return match_found
