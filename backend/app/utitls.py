@@ -56,48 +56,34 @@ def verify_token(token: str, stored_hash: str) -> bool:
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     return hmac.compare_digest(token_hash, stored_hash)
 
-def verify_face(stored_photo_path: str, tolerance: float = 0.5) -> bool:
+def verify_face(
+    stored_photo_path: str,
+    camera_frame,
+    tolerance: float = 0.5
+) -> bool:
     """
-    Robi jedno zdjęcie z kamerki i porównuje twarz ze zdjęciem referencyjnym
+    Porównuje twarz ze zdjęcia z bazy z twarzą z klatki kamery
     """
 
-    # --- Wczytaj zdjęcie z bazy ---
+    # --- zdjęcie z bazy ---
     known_image = face_recognition.load_image_file(stored_photo_path)
     known_encodings = face_recognition.face_encodings(known_image)
 
     if not known_encodings:
-        print("Brak twarzy na zdjęciu referencyjnym")
         return False
 
     known_encoding = known_encodings[0]
 
-    # --- Uruchom kamerkę ---
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        raise RuntimeError("Nie można otworzyć kamerki")
-
-    try:
-        ret, frame = cap.read()
-        if not ret:
-            print("Nie udało się zrobić zdjęcia")
-            return False
-    finally:
-        cap.release()
-
-    # --- Przetwarzanie zdjęcia z kamerki ---
-    rgb_frame = frame[:, :, ::-1]  # BGR -> RGB
+    # --- klatka z kamerki ---
+    rgb_frame = camera_frame[:, :, ::-1]
     face_locations = face_recognition.face_locations(rgb_frame)
     face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
     if not face_encodings:
-        print("Nie wykryto twarzy na zdjęciu z kamerki")
         return False
 
-    # --- Porównanie (pierwsza wykryta twarz) ---
-    match = face_recognition.compare_faces(
+    return face_recognition.compare_faces(
         [known_encoding],
         face_encodings[0],
         tolerance=tolerance
     )[0]
-
-    return match

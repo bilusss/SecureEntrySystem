@@ -1,19 +1,20 @@
 import cv2
+from infrastructure.camera import capture_photo
 
-def test_camera_live_preview():
-    cap = cv2.VideoCapture(0)
-    assert cap.isOpened(), "Nie udało się otworzyć kamerki"
 
-    print("Naciśnij 'q', aby zakończyć podgląd...")
-    while True:
-        ret, frame = cap.read()
-        assert ret, "Nie udało się przechwycić obrazu z kamerki"
+def test_capture_photo_display():
+    """
+    TEST MANUALNY:
+    - robi zdjęcie
+    - wyświetla klatkę
+    - zamyka okno po naciśnięciu klawisza
+    """
 
-        cv2.imshow("Podgląd kamery", frame)
+    frame = capture_photo()
 
-        # naciśnij 'q', aby zamknąć okno
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+    assert frame is not None
+    assert frame.size > 0
 
-    cap.release()
+    cv2.imshow("Captured frame - press any key", frame)
+    cv2.waitKey(0)
     cv2.destroyAllWindows()
