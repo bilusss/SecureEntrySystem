@@ -10,7 +10,6 @@ from app import settings
 from app.settings import mail_config
 import cv2
 import face_recognition
-import tempfile
 
 
 def _get_upload_path(file_name: str) -> str:
@@ -58,52 +57,47 @@ def verify_token(token: str, stored_hash: str) -> bool:
     return hmac.compare_digest(token_hash, stored_hash)
 
 def verify_face(stored_photo_path: str, tolerance: float = 0.5) -> bool:
+    """
+    Robi jedno zdjęcie z kamerki i porównuje twarz ze zdjęciem referencyjnym
+    """
 
-    # Wczytaj obraz referencyjny
+    # --- Wczytaj zdjęcie z bazy ---
     known_image = face_recognition.load_image_file(stored_photo_path)
     known_encodings = face_recognition.face_encodings(known_image)
+
     if not known_encodings:
-        print("Nie znaleziono twarzy na zdjęciu referencyjnym")
+        print("Brak twarzy na zdjęciu referencyjnym")
         return False
+
     known_encoding = known_encodings[0]
 
+    # --- Uruchom kamerkę ---
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         raise RuntimeError("Nie można otworzyć kamerki")
 
-    print("Naciśnij 'q', aby zakończyć podgląd")
-    match_found = False
-
     try:
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                print("Błąd odczytu z kamery")
-                break
-
-            rgb_frame = frame[:, :, ::-1]  # BGR -> RGB
-            face_locations = face_recognition.face_locations(rgb_frame)
-            face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
-
-            for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
-                matches = face_recognition.compare_faces([known_encoding], face_encoding, tolerance=tolerance)
-                if matches[0]:
-                    color = (0, 255, 0)
-                    label = "MATCH"
-                    match_found = True
-                else:
-                    color = (0, 0, 255)
-                    label = "NO MATCH"
-
-                cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
-                cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
-
-            cv2.imshow('Live Face Verification', frame)
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+        ret, frame = cap.read()
+        if not ret:
+            print("Nie udało się zrobić zdjęcia")
+            return False
     finally:
         cap.release()
-        cv2.destroyAllWindows()
 
-    return match_found
+    # --- Przetwarzanie zdjęcia z kamerki ---
+    rgb_frame = frame[:, :, ::-1]  # BGR -> RGB
+    face_locations = face_recognition.face_locations(rgb_frame)
+    face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+
+    if not face_encodings:
+        print("Nie wykryto twarzy na zdjęciu z kamerki")
+        return False
+
+    # --- Porównanie (pierwsza wykryta twarz) ---
+    match = face_recognition.compare_faces(
+        [known_encoding],
+        face_encodings[0],
+        tolerance=tolerance
+    )[0]
+
+    return match

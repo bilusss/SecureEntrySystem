@@ -17,3 +17,6 @@ python-dotenv
 fastapi-users
 fastapi-users-db-sqlalchemy
 fastapi-users-db-sync-sqlalchemy
+
+cv2
+face_recognition
