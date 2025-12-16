@@ -19,11 +19,11 @@ TESTING = os.getenv("TESTING", "false") == "true"
 
 if not TESTING:
     mail_config = ConnectionConfig(
-        MAIL_USERNAME="dummy_user@example.com",
-        MAIL_PASSWORD="dummy_password",
-        MAIL_FROM="dummy_user@example.com",
-        MAIL_PORT=587,
-        MAIL_SERVER="smtp.example.com",
+        MAIL_USERNAME=os.getenv("EMAIL_HOST_USER", ""),
+        MAIL_PASSWORD=os.getenv("EMAIL_HOST_PASSWORD", ""),
+        MAIL_FROM=os.getenv("EMAIL_HOST_USER", ""),
+        MAIL_PORT=os.getenv("EMAIL_PORT", 578),
+        MAIL_SERVER=os.getenv("EMAIL_HOST", "smtp.mailtrap.io"),
         MAIL_STARTTLS=True,
         MAIL_SSL_TLS=False,
     )
