@@ -10,6 +10,7 @@ from app import settings
 from app.settings import mail_config
 import cv2
 import face_recognition
+import numpy as np
 
 
 def _get_upload_path(file_name: str) -> str:
@@ -58,7 +59,7 @@ def verify_token(token: str, stored_hash: str) -> bool:
 
 def verify_face(
     stored_photo_path: str,
-    camera_frame,
+    photo: UploadFile,
     tolerance: float = 0.5
 ) -> bool:
     """
@@ -66,7 +67,8 @@ def verify_face(
     """
 
     # --- zdjęcie z bazy ---
-    known_image = face_recognition.load_image_file(stored_photo_path)
+    photo_path = _get_upload_path(stored_photo_path)
+    known_image = face_recognition.load_image_file(photo_path)
     known_encodings = face_recognition.face_encodings(known_image)
 
     if not known_encodings:
@@ -74,8 +76,17 @@ def verify_face(
 
     known_encoding = known_encodings[0]
 
-    # --- klatka z kamerki ---
-    rgb_frame = camera_frame[:, :, ::-1]
+    # Change UploadFile to numpy array
+    photo.file.seek(0)
+    file_bytes = np.frombuffer(photo.file.read(), dtype=np.uint8)
+    if file_bytes.size == 0:
+        return False
+
+    camera_frame = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    if camera_frame is None:
+        return False
+
+    rgb_frame = np.ascontiguousarray(camera_frame[:, :, ::-1])
     face_locations = face_recognition.face_locations(rgb_frame)
     face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 

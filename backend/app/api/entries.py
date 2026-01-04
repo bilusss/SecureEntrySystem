@@ -5,8 +5,9 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Form, UploadFile, HTTPException
 from app import crud
 from app.db import SessionDep
-from app.utitls import verify_token, verify_face, save_photo
+from app.utils import verify_token, verify_face, save_photo
 from app.models import EntryExitRecord
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,7 +29,15 @@ async def entrance(
 ):
     """Handle employee entrance using QR code and face recognition."""
     logger.info("Entrance attempt received.")
-    employee_id, qr_code_token = qr_code_payload.split(":")
+
+    try:
+        employee_id, qr_code_token = qr_code_payload.split(":")
+    except ValueError:
+        logger.error("Invalid QR code payload format.")
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid QR code payload format.",
+        )
     try:
         int(employee_id)
     except ValueError:
@@ -48,6 +57,10 @@ async def entrance(
     )
     record = crud.create_entry_exit_record(session=session, record=initial_record)
     save_photo(f"entrance_attempt_{record.id}.png", photo)
+
+    # Reset stream after saving attempt snapshot for downstream processing
+    if hasattr(photo, "file"):
+        photo.file.seek(0)
 
     if employee.photo_path is None:
         logger.error("Employee has no photo for face verification.")
@@ -75,7 +88,9 @@ async def entrance(
             status_code=401,
             detail="Invalid QR code token.",
         )
-    if not verify_face(photo, employee.photo_path):
+    print("employee photo path:", employee.photo_path)
+    # Zamienic photo na camera frame
+    if not verify_face(employee.photo_path, photo):
         logger.error("Face verification failed.")
         record.denial_reason = "Face verification failed."
         crud.update_entry_exit_record(session=session, record=record)
@@ -84,6 +99,8 @@ async def entrance(
             detail="Face verification failed.",
         )
 
+    if hasattr(photo, "file"):
+        photo.file.seek(0)
     save_photo(f"user_{employee.id}.png", photo)
     record.successful = True
     crud.update_entry_exit_record(session=session, record=record)
@@ -94,7 +111,14 @@ async def entrance(
 async def generate_raport(*, session: SessionDep):
     """Generate entrance/exit report."""
     logger.info("Report generation requested.")
-    # Placeholder for report generation logic
+    # Get all entry exit records from last month
+    records = crud.get_entry_exit_records(session=session, timedelta_days=30)
+
+    # Get employee ids that have records
+    employee_ids = set(record.employee_id for record in records)
+
+    # Iterate over employee and 
+
     # In a real implementation, this would involve querying the database
     # for entrance/exit records and compiling them into a report format (e.g., PDF).
     logger.info("Report generated successfully.")

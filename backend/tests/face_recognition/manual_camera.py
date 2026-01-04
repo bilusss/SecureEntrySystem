@@ -4,10 +4,10 @@ from infrastructure.camera import capture_photo
 
 def test_capture_photo_display():
     """
-    TEST MANUALNY:
-    - robi zdjęcie
-    - wyświetla klatkę
-    - zamyka okno po naciśnięciu klawisza
+    MANUAL TEST:
+    - takes a photo
+    - displays the frame
+    - closes the window after a key press
     """
 
     frame = capture_photo()
