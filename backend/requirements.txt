@@ -18,5 +18,6 @@ fastapi-users
 fastapi-users-db-sqlalchemy
 fastapi-users-db-sync-sqlalchemy
 
-cv2
+opencv-python
 face_recognition
+face_recognition_models @ git+https://github.com/ageitgey/face_recognition_models

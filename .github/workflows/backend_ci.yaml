@@ -1,5 +1,7 @@
 on:
   push:
+    branches:
+      - main
     paths:
       - 'backend/**'
   pull_request:
@@ -11,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.13]
+        python-version: [3.12.3]
     defaults:
       run:
         working-directory: ./backend
@@ -25,13 +27,14 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          python -m pip install "setuptools<81"
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Run Pytest
         run: coverage run -m pytest tests -v -s
         env:
           TESTING: "true"
-      - name: Generate test coverage report
-        run: coverage report -m  
-      - name: Generate HTML coverage report
-        run: coverage html
+      # - name: Generate test coverage report
+      #   run: coverage report -m  
+      # - name: Generate HTML coverage report
+      #   run: coverage html
 

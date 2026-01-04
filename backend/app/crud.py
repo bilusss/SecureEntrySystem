@@ -143,3 +143,13 @@ def create_entry_exit_record(*, session: Session, record: EntryExitRecord) -> En
 def update_entry_exit_record(*, session: Session, record: EntryExitRecord) -> None:
     session.add(record)
     session.commit()
+
+def get_entry_exit_records(*, session: Session, timedelta_days: int) -> Sequence[EntryExitRecord]:
+    from datetime import datetime, timedelta
+
+    cutoff_date = datetime.now() - timedelta(days=timedelta_days)
+    # Date needs to be 12 AM of that day
+    cutoff_date = cutoff_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    stmt = select(EntryExitRecord).where(EntryExitRecord.timestamp >= cutoff_date)
+    records: Sequence[EntryExitRecord] = session.exec(stmt).all()
+    return records

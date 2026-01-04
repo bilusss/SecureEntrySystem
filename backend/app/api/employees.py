@@ -7,7 +7,7 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from app import crud
 from app.db import SessionDep
 from app.schemas import EmployeeUpdate, EmployeeCreate, QRCodeBase
-from app.utitls import save_photo, generate_qr_and_send_email
+from app.utils import save_photo, generate_qr_and_send_email
 from app.users import current_user
 from app.models import User
 
