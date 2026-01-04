@@ -25,16 +25,16 @@ employees_router = r = APIRouter(prefix="/employees")
 @r.post("/", status_code=201)
 async def create_employee(
     *,
-    #user: User = Depends(current_user),
+    user: User = Depends(current_user),
     session: SessionDep,
     employee: EmployeeCreate = Depends(EmployeeCreate.as_form),
     photo: UploadFile,
 ):
-    # logger.info(
-    #     "User %s requested employee creation for email=%s",
-    #     getattr(user, "email", str(user)),
-    #     employee.email,
-    # )
+    logger.info(
+        "User %s requested employee creation for email=%s",
+        getattr(user, "email", str(user)),
+        employee.email,
+    )
     employee_exists = crud.get_employee_by_email(session=session, email=employee.email)
     if employee_exists is not None:
         logger.error("Employee with email %s already exists.", employee.email)
@@ -147,15 +147,15 @@ async def delete_employee(
 @r.post("/{employee_id}/generate_qr_code", status_code=204)
 async def generate_qr_code_for_employee(
     *,
-    #user: User = Depends(current_user),
+    user: User = Depends(current_user),
     employee_id: int,
     session: SessionDep,
 ) -> None:
-    # logger.info(
-    #     "User %s requested QR code generation for employee_id=%s",
-    #     getattr(user, "email", str(user)),
-    #     employee_id,
-    # )
+    logger.info(
+        "User %s requested QR code generation for employee_id=%s",
+        getattr(user, "email", str(user)),
+        employee_id,
+    )
     employee = crud.get_employee(session=session, employee_id=employee_id)
     if employee is None:
         logger.error("Employee not found for ID: %s", employee_id)
