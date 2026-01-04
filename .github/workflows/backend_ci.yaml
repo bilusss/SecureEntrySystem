@@ -1,5 +1,7 @@
 on:
   push:
+    branches:
+      - main
     paths:
       - 'backend/**'
   pull_request:
@@ -25,6 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          python -m pip install "setuptools<81"
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Run Pytest
         run: coverage run -m pytest tests -v -s
