@@ -144,13 +144,15 @@ async def delete_employee(
     logger.info("Employee deleted: %s", employee_id)
 
 
-@r.post("/{employee_id}/generate_qr_code", status_code=204)
+@r.post("/{employee_id}/generate_qr_code", status_code=200)
 async def generate_qr_code_for_employee(
     *,
     #user: User = Depends(current_user),
     employee_id: int,
     session: SessionDep,
-) -> None:
+):
+    from fastapi.responses import StreamingResponse
+    
     # logger.info(
     #     "User %s requested QR code generation for employee_id=%s",
     #     getattr(user, "email", str(user)),
@@ -189,20 +191,37 @@ async def generate_qr_code_for_employee(
         employee_id,
     )
 
+    qr_payload = f"{employee_id}:{token}"
+    
+    # Generate QR code image
+    import qrcode
+    qr_img = qrcode.make(qr_payload)
+    qr_img = qr_img.convert("RGB")
+    
+    buffer = __import__("io").BytesIO()
+    qr_img.save(buffer, format="PNG")
+    buffer.seek(0)
+    
+    logger.info(
+        "QR code image generated and returning for employee_id=%s", employee_id
+    )
+    
+    # Optional: Try to send email, but don't fail if it doesn't work
     try:
         await generate_qr_and_send_email(
-            recipient=recipient_email, token=f"{employee_id}:{token}"
+            recipient=recipient_email, token=qr_payload
         )
         logger.info(
             "QR code email sent to %s for employee_id=%s", recipient_email, employee_id
         )
     except Exception as e:
-        logger.exception(
-            "Failed to generate/send QR code email for employee_id=%s: %s",
+        logger.warning(
+            "Failed to send QR code email for employee_id=%s (continuing anyway): %s",
             employee_id,
             e,
         )
-        raise HTTPException(status_code=500, detail="Failed to send QR code email.")
+    
+    return StreamingResponse(buffer, media_type="image/png")
 
 
 @r.delete("/{employee_id}/revoke_qr_code", status_code=204)
