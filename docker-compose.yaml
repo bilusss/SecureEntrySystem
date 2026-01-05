@@ -2,4 +2,22 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "8888:8000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    environment:
+      - DATABASE_URL=sqlite:///./secure_entry.db
+      - EMAIL_HOST_USER=test@example.com
+      - EMAIL_HOST_PASSWORD=testpassword
+      - MAIL_FROM=noreply@secureentry.local
+      - MAIL_SERVER=localhost
+      - MAIL_PORT=587
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped
