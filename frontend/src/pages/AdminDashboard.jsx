@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { employeesApi, authApi } from '../services/api';
+import { employeesApi, authApi, entriesApi } from '../services/api';
 
 const AdminDashboard = () => {
   const [employees, setEmployees] = useState([]);
@@ -13,6 +13,7 @@ const AdminDashboard = () => {
   const [newEmployee, setNewEmployee] = useState({ firstName: '', lastName: '', email: '', photo: null });
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const navigate = useNavigate();
 
   // Sprawdzenie autoryzacji
@@ -149,6 +150,21 @@ const AdminDashboard = () => {
     navigate('/admin');
   };
 
+  const handleGenerateReport = async () => {
+    setIsGeneratingReport(true);
+    setError('');
+    try {
+      const result = await entriesApi.generateReport();
+      setSuccessMessage(`${result.message}`);
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } catch (err) {
+      console.error('Błąd generowania raportu:', err);
+      setError(err.message || 'Nie udało się wygenerować raportu');
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
   const openEditModal = (employee) => {
     setEditingEmployee({ ...employee, newPhoto: null });
     setShowEditModal(true);
@@ -198,12 +214,29 @@ const AdminDashboard = () => {
         {/* Action Bar */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Zarządzanie pracownikami</h1>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors flex items-center gap-2"
-          >
-            ➕ Dodaj pracownika
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleGenerateReport}
+              disabled={isGeneratingReport}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
+            >
+              {isGeneratingReport ? (
+                <>
+                  <span className="animate-spin">⏳</span> Generowanie...
+                </>
+              ) : (
+                <>
+                  📊 Generuj raport
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors flex items-center gap-2"
+            >
+              ➕ Dodaj pracownika
+            </button>
+          </div>
         </div>
 
         {/* Employees Grid */}

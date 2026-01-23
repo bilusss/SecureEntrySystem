@@ -296,36 +296,6 @@ const Home = () => {
             )}
           </div>
 
-          {/* QR Manual Input (opcjonalne) */}
-          {mode === 'qr' && (
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => setShowManualInput(!showManualInput)}
-                className="text-slate-400 hover:text-blue-400 text-sm underline"
-              >
-                {showManualInput ? 'Ukryj ręczne wprowadzanie' : 'Kamera nie działa? Wprowadź kod ręcznie'}
-              </button>
-              
-              {showManualInput && (
-                <form onSubmit={handleManualQrSubmit} className="mt-4 space-y-3">
-                  <input
-                    type="text"
-                    value={manualQrInput}
-                    onChange={(e) => setManualQrInput(e.target.value)}
-                    placeholder="Wklej zawartość kodu QR (np. 1:abc123xyz...)"
-                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                  />
-                  <button
-                    type="submit"
-                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors"
-                  >
-                    Zatwierdź kod
-                  </button>
-                </form>
-              )}
-            </div>
-          )}
-
           {/* Face Verification Buttons */}
           {mode === 'face' && (
             <div className="mt-6 flex gap-4 justify-center">
@@ -355,7 +325,7 @@ const Home = () => {
 
           {/* Instructions */}
           <div className="mt-8 bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-            <h2 className="text-lg font-semibold mb-4 text-emerald-400">�� Jak wejść do fabryki?</h2>
+            <h2 className="text-lg font-semibold mb-4 text-emerald-400">Jak wejść do fabryki?</h2>
             <ol className="space-y-3 text-slate-300 list-decimal list-inside">
               <li className={mode === 'qr' ? 'text-blue-400 font-medium' : ''}>
                 <strong>Pokaż kod QR</strong> do kamery (kod z przepustki/telefonu)

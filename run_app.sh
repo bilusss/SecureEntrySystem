@@ -1,3 +1,3 @@
-cp ./backend/.test_env ./backend/.env
+cp ./backend/test_env ./backend/.env
 
-docker compose up
+# docker compose up
