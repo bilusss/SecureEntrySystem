@@ -1,0 +1,8 @@
+ADMIN_EMAIL=admin@secureentry.com
+ADMIN_PASSWORD=pass123
+POSTGRES_USER=secureentryuser
+POSTGRES_PASSWORD=secureentrypass
+POSTGRES_DB=secureentrydb
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+DATABASE_URL=postgresql://secureentryuser:secureentrypass@db:5432/secureentrydb

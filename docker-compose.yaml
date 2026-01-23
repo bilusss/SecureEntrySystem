@@ -5,13 +5,10 @@ services:
       - "8888:8000"
     volumes:
       - ./backend/uploads:/app/uploads
-    environment:
-      - DATABASE_URL=sqlite:///./secure_entry.db
-      - EMAIL_HOST_USER=test@example.com
-      - EMAIL_HOST_PASSWORD=testpassword
-      - MAIL_FROM=noreply@secureentry.local
-      - MAIL_SERVER=localhost
-      - MAIL_PORT=587
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
     restart: unless-stopped
 
   frontend:
@@ -21,3 +18,16 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+  db:
+    image: postgres:15
+    env_file:
+      - ./backend/.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+volumes:
+  pgdata:

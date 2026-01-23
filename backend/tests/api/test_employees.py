@@ -189,7 +189,8 @@ def test_generate_and_revoke_qr_code(client: TestClient, override_auth, session,
     monkeypatch.setattr("app.api.employees.generate_qr_and_send_email", _fake_send)
 
     generate_resp = client.post(f"/api/employees/{employee_id}/generate_qr_code")
-    assert generate_resp.status_code == 204
+    # Endpoint returns 200 with QR image payload
+    assert generate_resp.status_code == 200
 
     qr_codes = session.exec(
         select(QRCode).where(QRCode.employee_id == employee_id, QRCode.is_revoked == False)  # noqa: E712

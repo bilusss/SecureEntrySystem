@@ -1,8 +1,8 @@
 from typing import Sequence, Any
-from sqlmodel import Session, select, false
-from datetime import date
+from sqlmodel import Session, select, false, desc
+from datetime import date, datetime
 from fastapi import HTTPException
-from app.models import Employee, QRCode, EntryExitRecord
+from app.models import Employee, QRCode, EntryExitRecord, WorkTimeRecord
 from app.schemas import EmployeeBase, EmployeeUpdate, EmployeeCreate, QRCodeBase
 
 
@@ -144,12 +144,129 @@ def update_entry_exit_record(*, session: Session, record: EntryExitRecord) -> No
     session.add(record)
     session.commit()
 
-def get_entry_exit_records(*, session: Session, timedelta_days: int) -> Sequence[EntryExitRecord]:
+def get_entry_exit_records(
+    *,
+    session: Session,
+    timedelta_days: int,
+    successful_only: bool = False,
+) -> Sequence[EntryExitRecord]:
+    """Return entry/exit records newer than ``timedelta_days``.
+
+    Args:
+        session: database session
+        timedelta_days: number of days to look back from today
+        successful_only: filter only successful attempts when True
+    """
     from datetime import datetime, timedelta
 
     cutoff_date = datetime.now() - timedelta(days=timedelta_days)
-    # Date needs to be 12 AM of that day
     cutoff_date = cutoff_date.replace(hour=0, minute=0, second=0, microsecond=0)
-    stmt = select(EntryExitRecord).where(EntryExitRecord.timestamp >= cutoff_date)
+
+    conditions = [EntryExitRecord.timestamp >= cutoff_date]
+    if successful_only:
+        conditions.append(EntryExitRecord.successful == True)
+
+    stmt = select(EntryExitRecord).where(*conditions).order_by(EntryExitRecord.timestamp)
     records: Sequence[EntryExitRecord] = session.exec(stmt).all()
     return records
+
+
+def toggle_employee_presence(*, session: Session, employee_id: int) -> bool:
+    """Toggle employee presence status.
+    
+    Args:
+        session: database session
+        employee_id: employee ID
+        
+    Returns:
+        bool: New presence status (True = entered, False = exited)
+    """
+    employee = get_employee(session=session, employee_id=employee_id)
+    employee.is_present = not employee.is_present
+    session.add(employee)
+    session.commit()
+    session.refresh(employee)
+    return employee.is_present
+
+
+def get_last_successful_entry(
+    *, session: Session, employee_id: int
+) -> EntryExitRecord | None:
+    """Get the last successful entry record for an employee.
+    
+    Args:
+        session: database session
+        employee_id: employee ID
+        
+    Returns:
+        EntryExitRecord or None if no entry found
+    """
+    stmt = (
+        select(EntryExitRecord)
+        .where(
+            EntryExitRecord.employee_id == employee_id,
+            EntryExitRecord.successful == True,
+            EntryExitRecord.is_entry == True,
+        )
+        .order_by(desc(EntryExitRecord.timestamp))
+    )
+    return session.exec(stmt).first()
+
+
+def create_work_time_record(
+    *, session: Session, employee_id: int, entry_time: datetime, exit_time: datetime
+) -> WorkTimeRecord:
+    """Create a work time record when employee exits.
+    
+    Args:
+        session: database session
+        employee_id: employee ID
+        entry_time: when employee entered
+        exit_time: when employee exited
+        
+    Returns:
+        WorkTimeRecord: created work time record
+    """
+    duration = exit_time - entry_time
+    duration_minutes = int(duration.total_seconds() // 60)
+    
+    record = WorkTimeRecord(
+        employee_id=employee_id,
+        date=entry_time.date(),
+        entry_time=entry_time,
+        exit_time=exit_time,
+        duration_minutes=duration_minutes,
+    )
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return record
+
+
+def get_work_time_records(
+    *,
+    session: Session,
+    employee_id: int | None = None,
+    timedelta_days: int = 30,
+) -> Sequence[WorkTimeRecord]:
+    """Get work time records.
+    
+    Args:
+        session: database session
+        employee_id: optional employee ID to filter by
+        timedelta_days: number of days to look back
+        
+    Returns:
+        Sequence[WorkTimeRecord]: list of work time records
+    """
+    from datetime import timedelta
+    
+    cutoff_date = datetime.now() - timedelta(days=timedelta_days)
+    cutoff_date = cutoff_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    conditions = [WorkTimeRecord.entry_time >= cutoff_date]
+    if employee_id is not None:
+        conditions.append(WorkTimeRecord.employee_id == employee_id)
+    
+    stmt = select(WorkTimeRecord).where(*conditions).order_by(desc(WorkTimeRecord.entry_time))
+    return session.exec(stmt).all()

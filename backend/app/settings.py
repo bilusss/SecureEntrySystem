@@ -13,7 +13,7 @@ UPLOAD_DIR = BASE_DIR / "uploads"
 TEST_UPLOAD_DIR = BASE_DIR / "tests" / "test_uploads"
 TEST_PHOTOS_DIR = BASE_DIR / "tests" / "photos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-DATABASE_URL = "sqlite:///api.db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 TEST_DATABASE_URL = "sqlite:///memory:test.db"
 
 TESTING = os.getenv("TESTING", "false") == "true"

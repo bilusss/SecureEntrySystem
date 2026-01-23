@@ -9,14 +9,49 @@ from app import settings
 from app.api.employees import employees_router
 from app.api.entries import entries_router
 from app.api.auth import auth_router
-from app.db import init_db
+from app.db import init_db, engine
 from app.schemas import UserRead, UserCreate
+from sqlmodel import Session, select
+from fastapi_users_db_sync_sqlalchemy import SQLAlchemyUserDatabase
+from app.models import User
+from app.users import UserManager
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup logic
     init_db()
+    
+    # Create admin user if it doesn't exist
+    with Session(engine) as session:
+        user_db = SQLAlchemyUserDatabase(session, User)
+        user_manager = UserManager(user_db)
+
+        ADMIN_EMAIL = os.getenv('ADMIN_EMAIL')
+        ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
+
+        if not ADMIN_EMAIL or not ADMIN_PASSWORD:
+            logger.warning('ADMIN_EMAIL and ADMIN_PASSWORD environment variables are not set. Skipping admin user creation.')
+            yield
+            return
+        
+        logger.info('Checking for admin user existence: %s', ADMIN_EMAIL)
+        
+        # Query directly using SQLModel/SQLAlchemy
+        stmt = select(User).where(User.email == ADMIN_EMAIL)
+        existing_user = session.exec(stmt).first()
+        
+        if existing_user is None:
+            user_create = UserCreate(email=ADMIN_EMAIL, password=ADMIN_PASSWORD)
+            await user_manager.create(user_create, safe=False)
+            logger.info('Created admin user with email %s', ADMIN_EMAIL)
+        else:
+            logger.info('Admin user already exists.')
+    
     yield
 
 

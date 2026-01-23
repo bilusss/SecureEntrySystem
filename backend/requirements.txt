@@ -13,6 +13,8 @@ Pillow
 fastapi-mail
 qrcode[pil]
 python-dotenv
+reportlab
+psycopg2-binary
 
 fastapi-users
 fastapi-users-db-sqlalchemy
